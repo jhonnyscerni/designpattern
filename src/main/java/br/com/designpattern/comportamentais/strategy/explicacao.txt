@@ -1,0 +1,149 @@
+O padrão de projeto Strategy é especialmente útil em contextos de Engenharia de Software quando há necessidade de alternar entre várias implementações de uma lógica ou algoritmo de forma dinâmica, sem modificar o código do cliente. Vou descrever um exemplo prático que pode ocorrer em projetos com Spring Boot em cenários reais.
+Contexto do Problema
+
+Imagine que você, trabalha em uma fintech. Nessa empresa, há uma necessidade de calcular taxas de juros de acordo com o perfil de cada cliente. Dependendo do perfil, como histórico de crédito, idade e outras variáveis, diferentes algoritmos de cálculo são aplicados. Para isso, a empresa possui uma família de algoritmos de cálculo de taxa de juros.
+Exigências do Negócio
+
+O sistema precisa ser flexível, permitindo que novos algoritmos possam ser facilmente adicionados ou substituídos sem modificar o restante do sistema. Além disso, o código deve ser de fácil manutenção, garantindo que a lógica de negócios seja clara e fácil de expandir.
+Solução com o Padrão Strategy
+
+A solução com o padrão Strategy permite que você defina uma interface comum para diferentes estratégias de cálculo e implemente cada algoritmo específico em uma classe separada. Utilizando o Spring Boot, você pode injetar dinamicamente a estratégia desejada de acordo com o perfil do cliente.
+Implementação
+1. Defina uma Interface para o Cálculo de Taxa de Juros
+
+Primeiro, crie uma interface para encapsular o comportamento comum de todos os algoritmos de cálculo de juros.
+
+public interface TaxaJurosStrategy {
+    BigDecimal calcularTaxa(BigDecimal valorEmprestimo, int prazo);
+}
+
+2. Implemente Estratégias Específicas de Cálculo de Juros
+
+Crie classes para cada algoritmo específico. Por exemplo:
+
+import org.springframework.stereotype.Component;
+import java.math.BigDecimal;
+
+@Component("taxaAltaRisco")
+public class TaxaJurosAltaRisco implements TaxaJurosStrategy {
+
+    @Override
+    public BigDecimal calcularTaxa(BigDecimal valorEmprestimo, int prazo) {
+        // Algoritmo específico para clientes de alto risco
+        return valorEmprestimo.multiply(new BigDecimal("0.15")).multiply(new BigDecimal(prazo));
+    }
+}
+
+@Component("taxaBaixoRisco")
+public class TaxaJurosBaixoRisco implements TaxaJurosStrategy {
+
+    @Override
+    public BigDecimal calcularTaxa(BigDecimal valorEmprestimo, int prazo) {
+        // Algoritmo específico para clientes de baixo risco
+        return valorEmprestimo.multiply(new BigDecimal("0.05")).multiply(new BigDecimal(prazo));
+    }
+}
+
+Cada uma dessas classes representa uma estratégia de cálculo de juros.
+3. Crie uma Classe para o Contexto que Utiliza a Estratégia
+
+Essa classe será responsável por escolher a estratégia certa. Para isso, usaremos uma estrutura de fábrica simples com o Spring para injetar a estratégia desejada com base no perfil do cliente.
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.util.Map;
+
+@Service
+public class CalculadoraTaxaJurosService {
+
+    private final Map<String, TaxaJurosStrategy> strategies;
+
+    @Autowired
+    public CalculadoraTaxaJurosService(Map<String, TaxaJurosStrategy> strategies) {
+        this.strategies = strategies;
+    }
+
+    public BigDecimal calcularTaxa(String perfilCliente, BigDecimal valorEmprestimo, int prazo) {
+        TaxaJurosStrategy strategy = strategies.get(perfilCliente);
+        if (strategy == null) {
+            throw new IllegalArgumentException("Perfil de cliente desconhecido");
+        }
+        return strategy.calcularTaxa(valorEmprestimo, prazo);
+    }
+}
+
+Neste exemplo, o Map<String, TaxaJurosStrategy> é injetado pelo Spring e automaticamente popula as estratégias registradas (@Component com nomes específicos). Assim, cada perfil de cliente é mapeado para uma estratégia específica de cálculo de juros.
+4. Configurando e Utilizando no Cliente
+
+Por fim, use essa configuração no seu controlador ou serviço onde for necessário calcular a taxa de juros:
+
+@RestController
+@RequestMapping("/api/emprestimos")
+public class EmprestimoController {
+
+    private final CalculadoraTaxaJurosService calculadoraTaxaJurosService;
+
+    @Autowired
+    public EmprestimoController(CalculadoraTaxaJurosService calculadoraTaxaJurosService) {
+        this.calculadoraTaxaJurosService = calculadoraTaxaJurosService;
+    }
+
+    @GetMapping("/calcular")
+    public BigDecimal calcularTaxa(@RequestParam String perfilCliente,
+                                   @RequestParam BigDecimal valorEmprestimo,
+                                   @RequestParam int prazo) {
+        return calculadoraTaxaJurosService.calcularTaxa(perfilCliente, valorEmprestimo, prazo);
+    }
+}
+
+Explicação do Funcionamento
+
+    O cliente faz uma requisição para calcular a taxa de juros, informando seu perfil, valor do empréstimo e prazo.
+    O EmprestimoController passa essas informações para o CalculadoraTaxaJurosService.
+    O CalculadoraTaxaJurosService seleciona a estratégia correta com base no perfil do cliente (usando o Map<String, TaxaJurosStrategy>) e calcula a taxa.
+    Se um novo algoritmo for necessário para um novo perfil de cliente, basta criar uma nova classe que implemente TaxaJurosStrategy e anotá-la com @Component, usando um nome específico.
+
+Vantagens do Padrão Strategy neste Caso
+
+    Flexibilidade: Novos cálculos de juros podem ser adicionados sem modificar o código existente.
+    Facilidade de Manutenção: Cada estratégia está encapsulada em sua própria classe, tornando o código mais fácil de entender e manter.
+    Desacoplamento: O contexto (CalculadoraTaxaJurosService) não precisa conhecer detalhes dos algoritmos, pois as estratégias são intercambiáveis.
+
+Esse exemplo mostra como o padrão Strategy, junto com as anotações e injeções do Spring, torna o código altamente modular e facilmente expansível, atendendo a requisitos reais de sistemas financeiros onde é comum a necessidade de adaptação rápida a novos perfis e regras de negócio.
+
+
+
+
+-----------------------------------------------
+
+
+Para fazer uma requisição curl que utilize o exemplo de cálculo de juros acima, vamos assumir que o serviço está rodando localmente no endereço http://localhost:8080/api/emprestimos/calcular. Abaixo, está um exemplo de como seria uma requisição curl para calcular a taxa de juros.
+
+Vamos supor que queremos calcular a taxa de juros para um cliente com o perfil taxaAltaRisco, solicitando um empréstimo de R$ 10.000 com um prazo de 12 meses.
+
+curl -X GET "http://localhost:8080/api/emprestimos/calcular" \
+     -G \
+     --data-urlencode "perfilCliente=taxaAltaRisco" \
+     --data-urlencode "valorEmprestimo=10000" \
+     --data-urlencode "prazo=12"
+
+Explicação dos Parâmetros
+
+    -X GET: Especifica que estamos fazendo uma requisição HTTP GET.
+    "http://localhost:8080/api/emprestimos/calcular": URL da API que irá processar o cálculo da taxa de juros.
+    -G: Indica que os dados serão enviados como parâmetros de URL (query parameters) em uma requisição GET.
+    --data-urlencode "perfilCliente=taxaAltaRisco": Envia o parâmetro perfilCliente com o valor taxaAltaRisco, que será usado para determinar a estratégia de cálculo.
+    --data-urlencode "valorEmprestimo=10000": Envia o valor do empréstimo, neste caso, R$ 10.000.
+    --data-urlencode "prazo=12": Envia o prazo do empréstimo em meses, que é 12 neste exemplo.
+
+Resposta Esperada
+
+A resposta será um valor em formato JSON contendo o cálculo da taxa de juros, algo assim:
+
+{
+  "taxaCalculada": "18000.00"
+}
+
+Esse valor taxaCalculada representa a taxa de juros calculada com base na estratégia aplicada para o perfil taxaAltaRisco.
