@@ -1,0 +1,32 @@
+Imagine um cenário onde um Engenheiro de Software está trabalhando em um sistema de recomendação para uma plataforma de e-commerce, e precisa de um mecanismo flexível para calcular preços dinâmicos com base em diferentes regras de desconto e promoções. Em um projeto de e-commerce, as condições de desconto são frequentemente alteradas com base em campanhas de marketing, preferências de clientes, entre outros fatores.
+
+Nesse caso, o engenheiro pode utilizar o padrão Decorator para aplicar descontos de forma dinâmica. Por exemplo, ele pode criar um PriceService base e aplicar diferentes decorators para regras de desconto.
+
+Aplicação prática:
+
+    Decorator de Desconto para Primeiros Usuários: Aplica um desconto inicial para novos usuários.
+    Decorator de Desconto Sazonal: Aplica um desconto adicional em períodos específicos (Black Friday, Natal etc.).
+    Decorator de Pontos de Fidelidade: Dá um desconto com base nos pontos acumulados do cliente.
+
+Com essa abordagem, o engenheiro consegue facilmente combinar descontos sem modificar a lógica principal, adicionando novos decorators para cada tipo de regra promocional nova que seja necessária.
+
+Explicação do Código
+
+
+    PriceService: A interface para cálculo de preço, com um método calculatePrice.
+    BasicPriceService: Implementa o cálculo básico de preço, retornando o preço sem descontos.
+    Decorators: Três decorators (NewUserDiscountDecorator, SeasonalDiscountDecorator, e LoyaltyDiscountDecorator) aplicam descontos específicos.
+    DiscountedPriceService: Este serviço combina os decorators dinamicamente, aplicando os descontos dependendo das condições do cliente (novo usuário, sazonal, pontos de fidelidade).
+    Controller: Expõe uma API REST para calcular o preço final com os descontos, recebendo parâmetros para decidir quais descontos aplicar.
+
+Como Usar
+
+Ao chamar o endpoint GET /price/calculate com parâmetros específicos, você verá a aplicação de diferentes descontos. Por exemplo:
+
+
+------------------------------------------------------------------
+Duvidas do PriDecorator
+Funcionamento
+Classe Abstrata: PriceDecorator é uma classe abstrata, então não pode ser instanciada diretamente. Ela serve como base para outros decoradores que implementam descontos específicos.
+Encapsulamento: O PriceDecorator encapsula um objeto PriceService, permitindo que múltiplos decoradores sejam encadeados para aplicar vários descontos.
+Extensibilidade: Novos tipos de descontos podem ser facilmente adicionados criando novas classes que estendem PriceDecorator e implementam o método calculatePrice para aplicar o desconto desejado.

@@ -1,0 +1,9 @@
+O padrão de projeto Composite é amplamente utilizado em cenários onde é necessário lidar com estruturas hierárquicas, como árvores, permitindo tratar objetos compostos e individuais de forma uniforme. Em sistemas complexos desenvolvidos em Spring Boot, o Composite pode ser útil, por exemplo, para representar um sistema de permissões, onde é necessário controlar permissões de forma hierárquica. Vamos abordar um exemplo em Spring Boot e, em seguida, discutir um caso real de aplicação em um cenário profissional.
+Exemplo em Spring Boot usando Composite Pattern
+
+Vamos criar um sistema em Spring Boot para representar um diretório de arquivos, onde cada arquivo ou pasta pode conter outros arquivos e pastas, simulando a estrutura de um sistema de arquivos.
+1. Estrutura de Classes do Padrão Composite
+
+    Componente (Component): Interface ou classe abstrata que define o comportamento dos objetos individuais e compostos.
+    Folha (Leaf): Implementação do componente para objetos "indivíduos" (ex.: arquivos).
+    Composto (Composite): Implementação do componente para objetos compostos, ou seja, que podem conter outros objetos (ex.: pasta).

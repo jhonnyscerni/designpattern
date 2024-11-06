@@ -1,0 +1,149 @@
+Exemplo Prático em Spring Boot
+
+No cenário abaixo, temos uma aplicação de notificações que pode enviar mensagens por diferentes meios (ex.: e-mail e SMS). Podemos ter diferentes tipos de notificações (ex.: Notificação de alerta, Notificação de relatório). O Bridge é útil para permitir que novos tipos de notificações ou meios de envio sejam adicionados sem precisar alterar todas as combinações possíveis
+Antes do Design Pattern Bridge
+
+Sem o uso do padrão Bridge, a implementação de diferentes tipos de notificações e métodos de envio pode resultar em uma hierarquia de classes complexa e difícil de manter. Por exemplo:
+
+        // src/main/java/br/com/designpattern/bridge/EmailAlertNotification.java
+        public class EmailAlertNotification {
+            public void send(String message) {
+                // Lógica para enviar alerta por e-mail
+            }
+        }
+
+        // src/main/java/br/com/designpattern/bridge/SmsAlertNotification.java
+        public class SmsAlertNotification {
+            public void send(String message) {
+                // Lógica para enviar alerta por SMS
+            }
+        }
+
+        // src/main/java/br/com/designpattern/bridge/EmailReportNotification.java
+        public class EmailReportNotification {
+            public void send(String message) {
+                // Lógica para enviar relatório por e-mail
+            }
+        }
+
+        // src/main/java/br/com/designpattern/bridge/SmsReportNotification.java
+        public class SmsReportNotification {
+            public void send(String message) {
+                // Lógica para enviar relatório por SMS
+            }
+        }
+
+ -------------------------------------------------------------------------------
+
+ Depois do Design Pattern Bridge
+ Com o padrão Bridge, a implementação é mais flexível e fácil de manter, separando a abstração (Notification) da implementação (MessageSender).
+
+ ----------------------------------------
+ Abstração
+
+         // src/main/java/br/com/designpattern/bridge/Notification.java
+        package br.com.designpattern.bridge;
+
+        import br.com.designpattern.bridge.sender.MessageSender;
+
+        public abstract class Notification {
+            protected MessageSender messageSender;
+
+            public Notification(MessageSender messageSender) {
+                this.messageSender = messageSender;
+            }
+
+            public abstract void sendNotification(String message);
+        }
+
+-----------------------------------------------------------------------
+
+Implementação da Abstração
+
+        // src/main/java/br/com/designpattern/bridge/notification/AlertNotification.java
+        package br.com.designpattern.bridge.notification;
+
+        public class AlertNotification extends Notification {
+            public AlertNotification(MessageSender messageSender) {
+                super(messageSender);
+            }
+
+            @Override
+            public void sendNotification(String message) {
+                messageSender.sendMessage("Alert: " + message);
+            }
+        }
+
+        // src/main/java/br/com/designpattern/bridge/notification/ReportNotification.java
+        package br.com.designpattern.bridge.notification;
+
+             public class ReportNotification extends Notification {
+            public ReportNotification(MessageSender messageSender) {
+                super(messageSender);
+            }
+
+            @Override
+            public void sendNotification(String message) {
+                messageSender.sendMessage("Report: " + message);
+            }
+        }
+
+
+-----------------------------------------------------------------------
+
+Implementação do Envio de Mensagens
+        // src/main/java/br/com/designpattern/bridge/sender/MessageSender.java
+        package br.com.designpattern.bridge.sender;
+
+        public interface MessageSender {
+            void sendMessage(String message);
+        }
+
+        // src/main/java/br/com/designpattern/bridge/sender/EmailSender.java
+        package br.com.designpattern.bridge.sender;
+
+        public class EmailSender implements MessageSender {
+            @Override
+            public void sendMessage(String message) {
+                // Lógica para enviar mensagem por e-mail
+                System.out.println("Sending email: " + message);
+            }
+        }
+
+        // src/main/java/br/com/designpattern/bridge/sender/SmsSender.java
+        package br.com.designpattern.bridge.sender;
+
+        public class SmsSender implements MessageSender {
+            @Override
+            public void sendMessage(String message) {
+                // Lógica para enviar mensagem por SMS
+                System.out.println("Sending SMS: " + message);
+            }
+        }
+
+
+----------------------------------------------------------------
+
+Uso do Padrão Bridge
+
+// src/main/java/br/com/designpattern/bridge/controller/NotificationController.java
+package br.com.designpattern.bridge.controller;
+
+import br.com.designpattern.bridge.Notification;
+import br.com.designpattern.bridge.notification.AlertNotification;
+import br.com.designpattern.bridge.notification.ReportNotification;
+import br.com.designpattern.bridge.sender.EmailSender;
+import br.com.designpattern.bridge.sender.SmsSender;
+
+public class NotificationController {
+    public static void main(String[] args) {
+        Notification alertEmail = new AlertNotification(new EmailSender());
+        alertEmail.sendNotification("Server is down!");
+
+        Notification reportSms = new ReportNotification(new SmsSender());
+        reportSms.sendNotification("Daily report generated.");
+    }
+}
+
+Comparação
+Antes: Cada combinação de tipo de notificação e método de envio exigia uma nova classe, resultando em uma hierarquia complexa.  Depois: O padrão Bridge separa a abstração (Notification) da implementação (MessageSender), permitindo combinações flexíveis e uma estrutura de código mais limpa e fácil de manter.

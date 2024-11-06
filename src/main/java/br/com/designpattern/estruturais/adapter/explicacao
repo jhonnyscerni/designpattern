@@ -1,0 +1,217 @@
+Se as informações no sistema fossem estruturadas de maneira diferente e não tivessem uma interface comum, poderíamos ter, por exemplo, classes de serviços com métodos e estruturas de dados próprias e incompatíveis com o que nossa aplicação espera.
+
+Vamos imaginar um cenário onde cada sistema de pagamento (PayPal e Stripe) envia informações como objetos específicos ao invés de implementar uma interface. Nesse caso, usamos o Adapter para traduzir esses objetos em uma estrutura compatível com a nossa aplicação.
+Cenário: Integração sem Interface Comum
+
+Suponha que as classes de pagamento fornecidas por cada provedor não seguem uma interface comum. Cada uma delas possui uma estrutura de dados e métodos específicos, mas ainda precisamos integrar esses dados de forma coesa em nosso sistema.
+
+    PayPalAPI retorna um objeto PayPalPaymentInfo.
+    StripeAPI retorna um objeto StripeChargeInfo.
+
+Nossa aplicação, porém, espera uma estrutura chamada PaymentInfo, com um campo amount que seja comum.
+Estrutura dos Objetos Externos
+
+                // Estrutura fornecida pela PayPalAPI
+                public class PayPalPaymentInfo {
+                    private double paymentAmount;
+
+                    public PayPalPaymentInfo(double paymentAmount) {
+                        this.paymentAmount = paymentAmount;
+                    }
+
+                    public double getPaymentAmount() {
+                        return paymentAmount;
+                    }
+                }
+
+                // Estrutura fornecida pela StripeAPI
+                public class StripeChargeInfo {
+                    private double chargeAmount;
+
+                    public StripeChargeInfo(double chargeAmount) {
+                        this.chargeAmount = chargeAmount;
+                    }
+
+                    public double getChargeAmount() {
+                        return chargeAmount;
+                    }
+                }
+
+Cada provedor usa nomes diferentes para o campo amount. PayPalPaymentInfo usa paymentAmount, enquanto StripeChargeInfo usa chargeAmount.
+
+
+# Solução com Adapter
+
+Neste caso, o Adapter transforma essas estruturas para que possam ser usadas de forma unificada na nossa aplicação.
+Passo 1: Definir a Estrutura Esperada pela Aplicação (PaymentInfo) comum para todas
+
+                public class PaymentInfo {
+                    private double amount;
+
+                    public PaymentInfo(double amount) {
+                        this.amount = amount;
+                    }
+
+                    public double getAmount() {
+                        return amount;
+                    }
+                }
+
+2. Estrutura dos Objetos Externos
+
+Suponhamos que essas classes já sejam fornecidas e que não podemos modificá-las.
+
+                public class PayPalPaymentInfo {
+                    private double paymentAmount;
+
+                    public PayPalPaymentInfo(double paymentAmount) {
+                        this.paymentAmount = paymentAmount;
+                    }
+
+                    public double getPaymentAmount() {
+                        return paymentAmount;
+                    }
+                }
+
+                public class StripeChargeInfo {
+                    private double chargeAmount;
+
+                    public StripeChargeInfo(double chargeAmount) {
+                        this.chargeAmount = chargeAmount;
+                    }
+
+                    public double getChargeAmount() {
+                        return chargeAmount;
+                    }
+                }
+
+3. Adaptador PayPal (PayPalAdapter)
+
+O PayPalAdapter converte PayPalPaymentInfo em PaymentInfo.
+
+                import org.springframework.stereotype.Component;
+
+                @Component
+                public class PayPalAdapter {
+
+                    public PaymentInfo adapt(PayPalPaymentInfo payPalPaymentInfo) {
+                        return new PaymentInfo(payPalPaymentInfo.getPaymentAmount());
+                    }
+                }
+
+4. Adaptador Stripe (StripeAdapter)
+
+O StripeAdapter converte StripeChargeInfo em PaymentInfo.
+
+import org.springframework.stereotype.Component;
+
+                @Component
+                public class StripeAdapter {
+
+                    public PaymentInfo adapt(StripeChargeInfo stripeChargeInfo) {
+                        return new PaymentInfo(stripeChargeInfo.getChargeAmount());
+                    }
+                }
+
+
+5. PaymentService com Injeção de Dependência
+
+O PaymentService agora é um serviço Spring que usa os adaptadores injetados.
+
+
+                import org.springframework.beans.factory.annotation.Autowired;
+                import org.springframework.stereotype.Service;
+
+                @Service
+                public class PaymentService {
+
+                    private final PayPalAdapter payPalAdapter;
+                    private final StripeAdapter stripeAdapter;
+
+                    @Autowired
+                    public PaymentService(PayPalAdapter payPalAdapter, StripeAdapter stripeAdapter) {
+                        this.payPalAdapter = payPalAdapter;
+                        this.stripeAdapter = stripeAdapter;
+                    }
+
+                    public void processPayment(Object paymentInfo) {
+                        PaymentInfo info;
+
+                        if (paymentInfo instanceof PayPalPaymentInfo) {
+                            info = payPalAdapter.adapt((PayPalPaymentInfo) paymentInfo);
+                        } else if (paymentInfo instanceof StripeChargeInfo) {
+                            info = stripeAdapter.adapt((StripeChargeInfo) paymentInfo);
+                        } else {
+                            throw new IllegalArgumentException("Tipo de pagamento desconhecido.");
+                        }
+
+                        System.out.println("Processando pagamento de: " + info.getAmount());
+                    }
+                }
+
+6. Controlador PaymentController
+
+O PaymentController expõe um endpoint HTTP para processar pagamentos. Podemos simular um JSON que define o tipo de pagamento e o valor.
+
+
+                import org.springframework.beans.factory.annotation.Autowired;
+                import org.springframework.web.bind.annotation.PostMapping;
+                import org.springframework.web.bind.annotation.RequestBody;
+                import org.springframework.web.bind.annotation.RestController;
+
+                import java.util.Map;
+
+                @RestController
+                public class PaymentController {
+
+                    private final PaymentService paymentService;
+
+                    @Autowired
+                    public PaymentController(PaymentService paymentService) {
+                        this.paymentService = paymentService;
+                    }
+
+                    @PostMapping("/pay")
+                    public String pay(@RequestBody Map<String, Object> request) {
+                        String provider = (String) request.get("provider");
+                        double amount = (double) request.get("amount");
+
+                        if ("paypal".equalsIgnoreCase(provider)) {
+                            PayPalPaymentInfo payPalPaymentInfo = new PayPalPaymentInfo(amount);
+                            paymentService.processPayment(payPalPaymentInfo);
+                        } else if ("stripe".equalsIgnoreCase(provider)) {
+                            StripeChargeInfo stripeChargeInfo = new StripeChargeInfo(amount);
+                            paymentService.processPayment(stripeChargeInfo);
+                        } else {
+                            return "Provedor de pagamento desconhecido.";
+                        }
+
+                        return "Pagamento processado com sucesso para o valor: " + amount;
+                    }
+                }
+
+
+Testando a API
+
+Com o Spring Boot em execução, podemos enviar uma requisição POST para o endpoint /pay, especificando o provedor e o valor no corpo da requisição.
+Exemplo de Requisição com PayPal
+
+shell
+
+curl -X POST http://localhost:8080/pay -H "Content-Type: application/json" -d '{"provider": "paypal", "amount": 150.0}'
+
+Exemplo de Requisição com Stripe
+
+shell
+
+curl -X POST http://localhost:8080/pay -H "Content-Type: application/json" -d '{"provider": "stripe", "amount": 200.0}'
+
+Explicação
+
+    Injeção de Dependência: O Spring Boot injeta automaticamente os adaptadores (PayPalAdapter e StripeAdapter) no PaymentService.
+    Separação de Responsabilidades: Cada adaptador converte a estrutura de dados do provedor específico em PaymentInfo, que é o formato padrão esperado pelo sistema.
+    Controle por Endpoint: O PaymentController recebe as requisições, identifica o provedor de pagamento e cria a estrutura de dados apropriada antes de delegar para o PaymentService.
+
+Esse design torna o código escalável e flexível para novos provedores de pagamento no futuro, bastando criar um novo adaptador e configurar o controlador para lidar com ele.
+
+
