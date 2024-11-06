@@ -1,7 +1,7 @@
-package br.com.designpattern.adapter.service.impl;
+package br.com.designpattern.estruturais.adapter.service.impl;
 
-import br.com.designpattern.adapter.model.external.PayPalPaymentInfo;
-import br.com.designpattern.adapter.model.external.StripeChargeInfo;
+import br.com.designpattern.estruturais.adapter.model.external.PayPalPaymentInfo;
+import br.com.designpattern.estruturais.adapter.model.external.StripeChargeInfo;
 import org.springframework.stereotype.Service;
 
 @Service

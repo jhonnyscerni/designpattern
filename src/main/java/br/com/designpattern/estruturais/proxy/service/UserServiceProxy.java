@@ -1,6 +1,7 @@
-package br.com.designpattern.estruturais.proxy;
+package br.com.designpattern.estruturais.proxy.service;
 
 import br.com.designpattern.estruturais.proxy.impl.UserServiceImpl;
+import br.com.designpattern.estruturais.proxy.model.UserAccount;
 import org.springframework.stereotype.Service;
 
 @Service

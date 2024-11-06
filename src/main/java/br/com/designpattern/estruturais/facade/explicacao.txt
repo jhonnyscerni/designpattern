@@ -1,32 +1,42 @@
-Imagine um cenário onde um Engenheiro de Software está trabalhando em um sistema de recomendação para uma plataforma de e-commerce, e precisa de um mecanismo flexível para calcular preços dinâmicos com base em diferentes regras de desconto e promoções. Em um projeto de e-commerce, as condições de desconto são frequentemente alteradas com base em campanhas de marketing, preferências de clientes, entre outros fatores.
+Exemplo Real do Mercado
 
-Nesse caso, o engenheiro pode utilizar o padrão Decorator para aplicar descontos de forma dinâmica. Por exemplo, ele pode criar um PriceService base e aplicar diferentes decorators para regras de desconto.
+Um Engenheiro de Software sênior em uma fintech pode, por exemplo, implementar o padrão Facade ao integrar múltiplos serviços financeiros para oferecer uma interface unificada ao usuário final. Suponha que a empresa ofereça uma funcionalidade de "Resumo Financeiro" que precisa combinar dados de investimentos, saldo bancário e transações recentes, cada uma proveniente de diferentes APIs internas ou até mesmo de APIs de terceiros.
 
-Aplicação prática:
+Nesse cenário, o engenheiro sênior poderia criar uma classe Facade chamada FinancialSummaryFacade. Essa Facade consolidaria chamadas para diversas APIs e serviços de back-end que obtêm as informações financeiras.
+Estrutura do Exemplo:
 
-    Decorator de Desconto para Primeiros Usuários: Aplica um desconto inicial para novos usuários.
-    Decorator de Desconto Sazonal: Aplica um desconto adicional em períodos específicos (Black Friday, Natal etc.).
-    Decorator de Pontos de Fidelidade: Dá um desconto com base nos pontos acumulados do cliente.
+    InvestmentService: Conecta-se a uma API de investimentos para obter o saldo e o desempenho da carteira.
+    BankService: Recupera o saldo bancário do usuário.
+    TransactionService: Consulta as transações mais recentes.
 
-Com essa abordagem, o engenheiro consegue facilmente combinar descontos sem modificar a lógica principal, adicionando novos decorators para cada tipo de regra promocional nova que seja necessária.
+Exemplo de FinancialSummaryFacade
 
-Explicação do Código
+            public class FinancialSummaryFacade {
 
+                private final InvestmentService investmentService;
+                private final BankService bankService;
+                private final TransactionService transactionService;
 
-    PriceService: A interface para cálculo de preço, com um método calculatePrice.
-    BasicPriceService: Implementa o cálculo básico de preço, retornando o preço sem descontos.
-    Decorators: Três decorators (NewUserDiscountDecorator, SeasonalDiscountDecorator, e LoyaltyDiscountDecorator) aplicam descontos específicos.
-    DiscountedPriceService: Este serviço combina os decorators dinamicamente, aplicando os descontos dependendo das condições do cliente (novo usuário, sazonal, pontos de fidelidade).
-    Controller: Expõe uma API REST para calcular o preço final com os descontos, recebendo parâmetros para decidir quais descontos aplicar.
+                public FinancialSummaryFacade(InvestmentService investmentService,
+                                              BankService bankService,
+                                              TransactionService transactionService) {
+                    this.investmentService = investmentService;
+                    this.bankService = bankService;
+                    this.transactionService = transactionService;
+                }
 
-Como Usar
+                public FinancialSummary getFinancialSummary(String userId) {
+                    double investmentBalance = investmentService.getBalance(userId);
+                    double bankBalance = bankService.getBalance(userId);
+                    List<Transaction> recentTransactions = transactionService.getRecentTransactions(userId);
 
-Ao chamar o endpoint GET /price/calculate com parâmetros específicos, você verá a aplicação de diferentes descontos. Por exemplo:
+                    return new FinancialSummary(investmentBalance, bankBalance, recentTransactions);
+                }
+            }
 
+ Como isso ajuda
 
-------------------------------------------------------------------
-Duvidas do PriDecorator
-Funcionamento
-Classe Abstrata: PriceDecorator é uma classe abstrata, então não pode ser instanciada diretamente. Ela serve como base para outros decoradores que implementam descontos específicos.
-Encapsulamento: O PriceDecorator encapsula um objeto PriceService, permitindo que múltiplos decoradores sejam encadeados para aplicar vários descontos.
-Extensibilidade: Novos tipos de descontos podem ser facilmente adicionados criando novas classes que estendem PriceDecorator e implementam o método calculatePrice para aplicar o desconto desejado.
+     Simplificação: A FinancialSummaryFacade simplifica o processo para o consumidor de obter o resumo financeiro, encapsulando a complexidade das chamadas individuais às APIs.
+     Facilidade de Manutenção: Se a empresa mudar a API de investimentos ou a forma como obtém transações, só precisará alterar as implementações internas dos serviços específicos, mantendo a interface do FinancialSummaryFacade inalterada.
+
+ Esse padrão é amplamente utilizado por engenheiros que precisam orquestrar chamadas a múltiplos serviços e reduzir a complexidade da aplicação para outros desenvolvedores e consumidores da API.

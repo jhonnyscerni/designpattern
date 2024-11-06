@@ -13,6 +13,10 @@ java {
     }
 }
 
+springBoot {
+    mainClass = 'br.com.designpattern.estruturais.composite.FileSystemApplication'
+}
+
 configurations {
     compileOnly {
         extendsFrom annotationProcessor

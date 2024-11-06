@@ -1,10 +1,9 @@
-package br.com.designpattern.decorator.decorators;
+package br.com.designpattern.estruturais.decorator.decorators;
 
-import br.com.designpattern.decorator.service.PriceService;
-import org.springframework.stereotype.Service;
+import br.com.designpattern.estruturais.decorator.service.PriceService;
 
-@Service
 public class SeasonalDiscountDecorator extends PriceDecorator {
+
     public SeasonalDiscountDecorator(PriceService wrapped) {
         super(wrapped);
     }
@@ -12,8 +11,8 @@ public class SeasonalDiscountDecorator extends PriceDecorator {
     @Override
     public double calculatePrice(double basePrice) {
         double price = super.calculatePrice(basePrice);
-        double discount = price * 0.15; // 15% de desconto sazonal
-        System.out.println("Aplicando 15% de desconto sazonal.");
+        double discount = price * 0.20;
+        System.out.println("Aplicando 20% de desconto sazonal.");
         return price - discount;
     }
 }

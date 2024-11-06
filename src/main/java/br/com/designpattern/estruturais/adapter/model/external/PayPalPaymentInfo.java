@@ -1,4 +1,4 @@
-package br.com.designpattern.adapter.model.external;
+package br.com.designpattern.estruturais.adapter.model.external;
 
 // Estrutura fornecida pela PayPalAPI
 public class PayPalPaymentInfo {

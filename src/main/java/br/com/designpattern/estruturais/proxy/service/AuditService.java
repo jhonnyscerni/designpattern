@@ -1,4 +1,4 @@
-package br.com.designpattern.estruturais.proxy;
+package br.com.designpattern.estruturais.proxy.service;
 
 import org.springframework.stereotype.Service;
 

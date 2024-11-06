@@ -1,4 +1,4 @@
-package br.com.designpattern.composite;
+package br.com.designpattern.estruturais.composite;
 
 public class FileLeaf implements FileComponent {
     private String name;

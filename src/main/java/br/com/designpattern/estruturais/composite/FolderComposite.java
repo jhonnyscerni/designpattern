@@ -1,4 +1,4 @@
-package br.com.designpattern.composite;
+package br.com.designpattern.estruturais.composite;
 
 import java.util.ArrayList;
 import java.util.List;

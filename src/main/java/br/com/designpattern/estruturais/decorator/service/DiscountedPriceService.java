@@ -1,24 +1,22 @@
-package br.com.designpattern.decorator.service;
+package br.com.designpattern.estruturais.decorator.service;
 
-import br.com.designpattern.decorator.decorators.LoyaltyDiscountDecorator;
-import br.com.designpattern.decorator.decorators.NewUserDiscountDecorator;
-import br.com.designpattern.decorator.decorators.SeasonalDiscountDecorator;
-import br.com.designpattern.decorator.service.impl.BasicPriceService;
+import br.com.designpattern.estruturais.decorator.decorators.LoyaltyDiscountDecorator;
+import br.com.designpattern.estruturais.decorator.decorators.NewUserDiscountDecorator;
+import br.com.designpattern.estruturais.decorator.decorators.SeasonalDiscountDecorator;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
-// Serviço que combina os descontos
 @Service
 public class DiscountedPriceService {
     private final PriceService basicPriceService;
 
-    public DiscountedPriceService(BasicPriceService basicPriceService) {
+    public DiscountedPriceService(@Qualifier("basicPriceService") PriceService basicPriceService) {
         this.basicPriceService = basicPriceService;
     }
 
     public double calculateDiscountedPrice(double basePrice, boolean isNewUser, boolean isSeasonal, int loyaltyPoints) {
         PriceService decoratedService = basicPriceService;
 
-        // Aplica descontos dinamicamente de acordo com as condições
         if (isNewUser) {
             decoratedService = new NewUserDiscountDecorator(decoratedService);
         }

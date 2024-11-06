@@ -1,32 +1,141 @@
-Imagine um cenário onde um Engenheiro de Software está trabalhando em um sistema de recomendação para uma plataforma de e-commerce, e precisa de um mecanismo flexível para calcular preços dinâmicos com base em diferentes regras de desconto e promoções. Em um projeto de e-commerce, as condições de desconto são frequentemente alteradas com base em campanhas de marketing, preferências de clientes, entre outros fatores.
+Vamos comparar o código "antes" e "depois" da aplicação do padrão Flyweight. Isso permitirá entender como a implementação muda para otimizar o uso de memória, especialmente em sistemas que lidam com muitos objetos com informações semelhantes.
+Contexto
 
-Nesse caso, o engenheiro pode utilizar o padrão Decorator para aplicar descontos de forma dinâmica. Por exemplo, ele pode criar um PriceService base e aplicar diferentes decorators para regras de desconto.
+Considerando o mesmo exemplo de um sistema de mapas com Pontos de Interesse (POIs), vamos ver como o código se comportaria antes de aplicarmos o padrão Flyweight e depois da refatoração com Flyweight.
+Antes do Padrão Flyweight
 
-Aplicação prática:
+Antes de aplicar o Flyweight, cada POI (Ponto de Interesse) contém todos os dados necessários, incluindo as informações que poderiam ser compartilhadas entre múltiplos POIs do mesmo tipo. Assim, temos informações repetidas em cada objeto POI.
 
-    Decorator de Desconto para Primeiros Usuários: Aplica um desconto inicial para novos usuários.
-    Decorator de Desconto Sazonal: Aplica um desconto adicional em períodos específicos (Black Friday, Natal etc.).
-    Decorator de Pontos de Fidelidade: Dá um desconto com base nos pontos acumulados do cliente.
+public class PointOfInterest {
+    private final String type;       // Tipo do POI (ex.: Restaurante, Posto de Gasolina, etc.)
+    private final String icon;       // Ícone do POI
+    private final double latitude;   // Coordenada latitude
+    private final double longitude;  // Coordenada longitude
+    private final String specificData; // Informações específicas, como nome do local
 
-Com essa abordagem, o engenheiro consegue facilmente combinar descontos sem modificar a lógica principal, adicionando novos decorators para cada tipo de regra promocional nova que seja necessária.
+    public PointOfInterest(String type, String icon, double latitude, double longitude, String specificData) {
+        this.type = type;
+        this.icon = icon;
+        this.latitude = latitude;
+        this.longitude = longitude;
+        this.specificData = specificData;
+    }
 
-Explicação do Código
+    public void display() {
+        System.out.println("POI: " + type + " at (" + latitude + ", " + longitude + ") - " + specificData);
+    }
+}
 
+E agora o código para criar múltiplos POIs, cada um com seus dados completos, incluindo os dados repetidos de tipo e ícone:
 
-    PriceService: A interface para cálculo de preço, com um método calculatePrice.
-    BasicPriceService: Implementa o cálculo básico de preço, retornando o preço sem descontos.
-    Decorators: Três decorators (NewUserDiscountDecorator, SeasonalDiscountDecorator, e LoyaltyDiscountDecorator) aplicam descontos específicos.
-    DiscountedPriceService: Este serviço combina os decorators dinamicamente, aplicando os descontos dependendo das condições do cliente (novo usuário, sazonal, pontos de fidelidade).
-    Controller: Expõe uma API REST para calcular o preço final com os descontos, recebendo parâmetros para decidir quais descontos aplicar.
+public class WithoutFlyweight {
+    public static void main(String[] args) {
+        PointOfInterest poi1 = new PointOfInterest("Restaurant", "restaurant_icon.png", 40.7128, -74.0060, "Joe's Pizza");
+        PointOfInterest poi2 = new PointOfInterest("Restaurant", "restaurant_icon.png", 40.7138, -74.0160, "Central Sushi");
+        PointOfInterest poi3 = new PointOfInterest("Gas Station", "gas_icon.png", 40.7135, -74.0059, "Shell Gas Station");
 
-Como Usar
+        poi1.display();
+        poi2.display();
+        poi3.display();
+    }
+}
 
-Ao chamar o endpoint GET /price/calculate com parâmetros específicos, você verá a aplicação de diferentes descontos. Por exemplo:
+Problemas
 
+    Redundância de dados: Cada POI armazena seu próprio type e icon, mesmo que haja vários POIs do mesmo tipo. Isso desperdiça memória quando temos milhares de POIs.
+    Escalabilidade limitada: Conforme a quantidade de POIs cresce, o consumo de memória aumenta significativamente devido à duplicação das informações de tipo e ícone.
 
-------------------------------------------------------------------
-Duvidas do PriDecorator
-Funcionamento
-Classe Abstrata: PriceDecorator é uma classe abstrata, então não pode ser instanciada diretamente. Ela serve como base para outros decoradores que implementam descontos específicos.
-Encapsulamento: O PriceDecorator encapsula um objeto PriceService, permitindo que múltiplos decoradores sejam encadeados para aplicar vários descontos.
-Extensibilidade: Novos tipos de descontos podem ser facilmente adicionados criando novas classes que estendem PriceDecorator e implementam o método calculatePrice para aplicar o desconto desejado.
+Depois do Padrão Flyweight
+
+Com o padrão Flyweight, extraímos o tipo e o ícone de cada POI e os armazenamos em uma classe compartilhada PointOfInterestType. O POI agora só mantém dados específicos, como coordenadas e dados específicos do ponto. O PointOfInterestTypeFactory gerencia essas instâncias para garantir que cada tipo único seja criado apenas uma vez e compartilhado entre POIs.
+
+Passo 1: Definimos o tipo PointOfInterestType que contém os dados compartilhados.
+
+public interface PointOfInterestType {
+    String getName();
+    String getIcon();
+}
+
+Passo 2: Implementamos a classe PointOfInterestTypeImpl para representar o tipo de POI.
+
+public class PointOfInterestTypeImpl implements PointOfInterestType {
+    private final String name;
+    private final String icon;
+
+    public PointOfInterestTypeImpl(String name, String icon) {
+        this.name = name;
+        this.icon = icon;
+    }
+
+    @Override
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public String getIcon() {
+        return icon;
+    }
+}
+
+Passo 3: Criamos uma PointOfInterestTypeFactory para gerenciar instâncias únicas de tipos de POIs.
+
+import java.util.HashMap;
+import java.util.Map;
+
+public class PointOfInterestTypeFactory {
+    private static final Map<String, PointOfInterestType> types = new HashMap<>();
+
+    public static PointOfInterestType getType(String name, String icon) {
+        String key = name + "-" + icon;
+        if (!types.containsKey(key)) {
+            types.put(key, new PointOfInterestTypeImpl(name, icon));
+        }
+        return types.get(key);
+    }
+}
+
+Passo 4: Refatoramos a classe PointOfInterest para usar PointOfInterestType como um Flyweight.
+
+public class PointOfInterest {
+    private final PointOfInterestType type; // Flyweight
+    private final double latitude;
+    private final double longitude;
+    private final String specificData;
+
+    public PointOfInterest(PointOfInterestType type, double latitude, double longitude, String specificData) {
+        this.type = type;
+        this.latitude = latitude;
+        this.longitude = longitude;
+        this.specificData = specificData;
+    }
+
+    public void display() {
+        System.out.println("POI: " + type.getName() + " at (" + latitude + ", " + longitude + ") - " + specificData);
+    }
+}
+
+Passo 5: Criamos POIs usando a PointOfInterestTypeFactory, que agora cria tipos de POI compartilhados.
+
+public class WithFlyweight {
+    public static void main(String[] args) {
+        PointOfInterestType restaurantType = PointOfInterestTypeFactory.getType("Restaurant", "restaurant_icon.png");
+        PointOfInterestType gasStationType = PointOfInterestTypeFactory.getType("Gas Station", "gas_icon.png");
+
+        PointOfInterest poi1 = new PointOfInterest(restaurantType, 40.7128, -74.0060, "Joe's Pizza");
+        PointOfInterest poi2 = new PointOfInterest(restaurantType, 40.7138, -74.0160, "Central Sushi");
+        PointOfInterest poi3 = new PointOfInterest(gasStationType, 40.7135, -74.0059, "Shell Gas Station");
+
+        poi1.display();
+        poi2.display();
+        poi3.display();
+    }
+}
+
+Vantagens Após a Aplicação do Flyweight
+
+    Redução de memória: Como os tipos de POIs são compartilhados, não há necessidade de duplicar as informações type e icon para cada POI. Apenas as coordenadas e informações específicas são armazenadas em cada POI.
+    Eficiência: Para um grande número de POIs, o Flyweight permite um consumo de memória muito mais eficiente, tornando a aplicação mais escalável.
+    Manutenção Simplificada: Modificar um tipo de POI, como mudar o ícone de "Restaurante", requer apenas uma alteração na fábrica, pois todos os POIs do mesmo tipo compartilham a mesma instância.
+
+Assim, com o padrão Flyweight, conseguimos melhorar significativamente o desempenho e o uso de memória na aplicação, especialmente em sistemas com um volume elevado de objetos com dados compartilhados.

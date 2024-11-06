@@ -1,4 +1,4 @@
-package br.com.designpattern.adapter.controller.request;
+package br.com.designpattern.estruturais.adapter.controller.request;
 
 public class PaymentRequest {
     private String provider;

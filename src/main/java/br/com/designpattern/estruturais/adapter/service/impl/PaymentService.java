@@ -1,10 +1,10 @@
-package br.com.designpattern.adapter.service.impl;
+package br.com.designpattern.estruturais.adapter.service.impl;
 
-import br.com.designpattern.adapter.creationadapter.PayPalAdapter;
-import br.com.designpattern.adapter.creationadapter.StripeAdapter;
-import br.com.designpattern.adapter.model.PaymentInfo;
-import br.com.designpattern.adapter.model.external.PayPalPaymentInfo;
-import br.com.designpattern.adapter.model.external.StripeChargeInfo;
+import br.com.designpattern.estruturais.adapter.creationadapter.PayPalAdapter;
+import br.com.designpattern.estruturais.adapter.creationadapter.StripeAdapter;
+import br.com.designpattern.estruturais.adapter.model.PaymentInfo;
+import br.com.designpattern.estruturais.adapter.model.external.PayPalPaymentInfo;
+import br.com.designpattern.estruturais.adapter.model.external.StripeChargeInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

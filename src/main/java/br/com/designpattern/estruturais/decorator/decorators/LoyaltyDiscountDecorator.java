@@ -1,10 +1,7 @@
-package br.com.designpattern.decorator.decorators;
+package br.com.designpattern.estruturais.decorator.decorators;
 
-import br.com.designpattern.decorator.service.PriceService;
-import org.springframework.stereotype.Service;
+import br.com.designpattern.estruturais.decorator.service.PriceService;
 
-// Decorator de desconto por pontos de fidelidade
-@Service
 public class LoyaltyDiscountDecorator extends PriceDecorator {
     private final int loyaltyPoints;
 
@@ -16,8 +13,8 @@ public class LoyaltyDiscountDecorator extends PriceDecorator {
     @Override
     public double calculatePrice(double basePrice) {
         double price = super.calculatePrice(basePrice);
-        double discount = loyaltyPoints * 0.05; // Cada ponto de fidelidade vale 5% de desconto
-        System.out.println("Aplicando desconto de fidelidade.");
-        return price - Math.min(discount, price); // Limita o desconto para não ser negativo
+        double discount = price * 0.10;
+        System.out.println("Aplicando 10% de desconto de fidelidade.");
+        return price - discount;
     }
 }

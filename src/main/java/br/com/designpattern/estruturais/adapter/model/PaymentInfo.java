@@ -1,4 +1,4 @@
-package br.com.designpattern.adapter.model;
+package br.com.designpattern.estruturais.adapter.model;
 
 public class PaymentInfo {
     private double amount;

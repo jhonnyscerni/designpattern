@@ -1,4 +1,4 @@
-package br.com.designpattern.bridge.sender;
+package br.com.designpattern.estruturais.bridge.sender;
 
 public class EmailSender implements MessageSender {
     @Override

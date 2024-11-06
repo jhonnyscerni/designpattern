@@ -1,7 +1,7 @@
-package br.com.designpattern.bridge.notification;
+package br.com.designpattern.estruturais.bridge.notification;
 
-import br.com.designpattern.bridge.sender.MessageSender;
-import br.com.designpattern.bridge.Notification;
+import br.com.designpattern.estruturais.bridge.sender.MessageSender;
+import br.com.designpattern.estruturais.bridge.Notification;
 
 public class ReportNotification extends Notification {
     public ReportNotification(MessageSender messageSender) {

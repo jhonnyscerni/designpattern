@@ -1,4 +1,4 @@
-package br.com.designpattern.composite;
+package br.com.designpattern.estruturais.composite;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

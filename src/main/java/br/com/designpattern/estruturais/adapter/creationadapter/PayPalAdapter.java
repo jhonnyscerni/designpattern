@@ -1,7 +1,7 @@
-package br.com.designpattern.adapter.creationadapter;
+package br.com.designpattern.estruturais.adapter.creationadapter;
 
-import br.com.designpattern.adapter.model.PaymentInfo;
-import br.com.designpattern.adapter.model.external.PayPalPaymentInfo;
+import br.com.designpattern.estruturais.adapter.model.PaymentInfo;
+import br.com.designpattern.estruturais.adapter.model.external.PayPalPaymentInfo;
 import org.springframework.stereotype.Component;
 
 @Component

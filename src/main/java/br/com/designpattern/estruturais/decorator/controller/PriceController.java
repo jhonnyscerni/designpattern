@@ -1,6 +1,6 @@
-package br.com.designpattern.decorator.controller;
+package br.com.designpattern.estruturais.decorator.controller;
 
-import br.com.designpattern.decorator.service.DiscountedPriceService;
+import br.com.designpattern.estruturais.decorator.service.DiscountedPriceService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;

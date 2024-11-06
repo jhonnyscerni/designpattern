@@ -1,141 +1,92 @@
-Vamos comparar o código "antes" e "depois" da aplicação do padrão Flyweight. Isso permitirá entender como a implementação muda para otimizar o uso de memória, especialmente em sistemas que lidam com muitos objetos com informações semelhantes.
-Contexto
+Exemplo: Implementação de um Proxy para Controle de Acesso a Dados Sensíveis usando Spring Boot
 
-Considerando o mesmo exemplo de um sistema de mapas com Pontos de Interesse (POIs), vamos ver como o código se comportaria antes de aplicarmos o padrão Flyweight e depois da refatoração com Flyweight.
-Antes do Padrão Flyweight
+Imagine que você tem um serviço UserService em um sistema de banco digital que retorna informações de conta bancária de usuários. Como essas informações são sensíveis, você precisa de um controle rigoroso para garantir que apenas usuários autorizados possam acessá-las e que o acesso seja registrado para auditoria.
 
-Antes de aplicar o Flyweight, cada POI (Ponto de Interesse) contém todos os dados necessários, incluindo as informações que poderiam ser compartilhadas entre múltiplos POIs do mesmo tipo. Assim, temos informações repetidas em cada objeto POI.
+Para isso, você pode usar um Proxy para adicionar uma camada de segurança e registro de auditoria sem modificar diretamente o código do UserService.
+Estrutura do Código
 
-public class PointOfInterest {
-    private final String type;       // Tipo do POI (ex.: Restaurante, Posto de Gasolina, etc.)
-    private final String icon;       // Ícone do POI
-    private final double latitude;   // Coordenada latitude
-    private final double longitude;  // Coordenada longitude
-    private final String specificData; // Informações específicas, como nome do local
+    Interface de Serviço (UserService)
 
-    public PointOfInterest(String type, String icon, double latitude, double longitude, String specificData) {
-        this.type = type;
-        this.icon = icon;
-        this.latitude = latitude;
-        this.longitude = longitude;
-        this.specificData = specificData;
-    }
+    Define os métodos que fornecem acesso aos dados do usuário.
 
-    public void display() {
-        System.out.println("POI: " + type + " at (" + latitude + ", " + longitude + ") - " + specificData);
-    }
+public interface UserService {
+    UserAccount getUserAccount(Long userId);
 }
 
-E agora o código para criar múltiplos POIs, cada um com seus dados completos, incluindo os dados repetidos de tipo e ícone:
+Implementação Real do Serviço (UserServiceImpl)
 
-public class WithoutFlyweight {
-    public static void main(String[] args) {
-        PointOfInterest poi1 = new PointOfInterest("Restaurant", "restaurant_icon.png", 40.7128, -74.0060, "Joe's Pizza");
-        PointOfInterest poi2 = new PointOfInterest("Restaurant", "restaurant_icon.png", 40.7138, -74.0160, "Central Sushi");
-        PointOfInterest poi3 = new PointOfInterest("Gas Station", "gas_icon.png", 40.7135, -74.0059, "Shell Gas Station");
+Implementa a lógica para obter informações da conta do usuário.
 
-        poi1.display();
-        poi2.display();
-        poi3.display();
+@Service
+public class UserServiceImpl implements UserService {
+    @Override
+    public UserAccount getUserAccount(Long userId) {
+        // Aqui, você buscaria as informações do usuário no banco de dados.
+        return new UserAccount(userId, "John Doe", "1234-5678-9000", 1500.00);
     }
 }
 
-Problemas
+Classe de Proxy (UserServiceProxy)
 
-    Redundância de dados: Cada POI armazena seu próprio type e icon, mesmo que haja vários POIs do mesmo tipo. Isso desperdiça memória quando temos milhares de POIs.
-    Escalabilidade limitada: Conforme a quantidade de POIs cresce, o consumo de memória aumenta significativamente devido à duplicação das informações de tipo e ícone.
+Implementa a lógica de proxy, adicionando verificações de permissão e auditoria antes de chamar o serviço real.
 
-Depois do Padrão Flyweight
+@Service
+public class UserServiceProxy implements UserService {
+    private final UserServiceImpl userService;
+    private final AuditService auditService;
 
-Com o padrão Flyweight, extraímos o tipo e o ícone de cada POI e os armazenamos em uma classe compartilhada PointOfInterestType. O POI agora só mantém dados específicos, como coordenadas e dados específicos do ponto. O PointOfInterestTypeFactory gerencia essas instâncias para garantir que cada tipo único seja criado apenas uma vez e compartilhado entre POIs.
-
-Passo 1: Definimos o tipo PointOfInterestType que contém os dados compartilhados.
-
-public interface PointOfInterestType {
-    String getName();
-    String getIcon();
-}
-
-Passo 2: Implementamos a classe PointOfInterestTypeImpl para representar o tipo de POI.
-
-public class PointOfInterestTypeImpl implements PointOfInterestType {
-    private final String name;
-    private final String icon;
-
-    public PointOfInterestTypeImpl(String name, String icon) {
-        this.name = name;
-        this.icon = icon;
+    public UserServiceProxy(UserServiceImpl userService, AuditService auditService) {
+        this.userService = userService;
+        this.auditService = auditService;
     }
 
     @Override
-    public String getName() {
-        return name;
-    }
-
-    @Override
-    public String getIcon() {
-        return icon;
-    }
-}
-
-Passo 3: Criamos uma PointOfInterestTypeFactory para gerenciar instâncias únicas de tipos de POIs.
-
-import java.util.HashMap;
-import java.util.Map;
-
-public class PointOfInterestTypeFactory {
-    private static final Map<String, PointOfInterestType> types = new HashMap<>();
-
-    public static PointOfInterestType getType(String name, String icon) {
-        String key = name + "-" + icon;
-        if (!types.containsKey(key)) {
-            types.put(key, new PointOfInterestTypeImpl(name, icon));
+    public UserAccount getUserAccount(Long userId) {
+        // Verificação de permissão
+        if (!hasPermission(userId)) {
+            throw new SecurityException("Acesso negado para o usuário: " + userId);
         }
-        return types.get(key);
+        
+        // Registro de auditoria
+        auditService.logAccess(userId);
+
+        // Chamada ao serviço real
+        return userService.getUserAccount(userId);
+    }
+
+    private boolean hasPermission(Long userId) {
+        // Lógica para verificar se o usuário tem permissão
+        return true; // Exemplo simplificado
     }
 }
 
-Passo 4: Refatoramos a classe PointOfInterest para usar PointOfInterestType como um Flyweight.
+Classe de Auditoria (AuditService)
 
-public class PointOfInterest {
-    private final PointOfInterestType type; // Flyweight
-    private final double latitude;
-    private final double longitude;
-    private final String specificData;
+Um serviço separado que lida com o registro de acessos.
 
-    public PointOfInterest(PointOfInterestType type, double latitude, double longitude, String specificData) {
-        this.type = type;
-        this.latitude = latitude;
-        this.longitude = longitude;
-        this.specificData = specificData;
-    }
-
-    public void display() {
-        System.out.println("POI: " + type.getName() + " at (" + latitude + ", " + longitude + ") - " + specificData);
+@Service
+public class AuditService {
+    public void logAccess(Long userId) {
+        System.out.println("Auditando acesso ao usuário: " + userId + " em " + LocalDateTime.now());
+        // Aqui, registraríamos o acesso no banco de dados ou sistema de auditoria
     }
 }
 
-Passo 5: Criamos POIs usando a PointOfInterestTypeFactory, que agora cria tipos de POI compartilhados.
+Configuração e Uso do Proxy
 
-public class WithFlyweight {
-    public static void main(String[] args) {
-        PointOfInterestType restaurantType = PointOfInterestTypeFactory.getType("Restaurant", "restaurant_icon.png");
-        PointOfInterestType gasStationType = PointOfInterestTypeFactory.getType("Gas Station", "gas_icon.png");
+Ao invés de injetar UserServiceImpl diretamente, injetamos UserServiceProxy, que implementa a mesma interface (UserService), mas adiciona as verificações de permissão e auditoria antes de acessar o serviço real.
 
-        PointOfInterest poi1 = new PointOfInterest(restaurantType, 40.7128, -74.0060, "Joe's Pizza");
-        PointOfInterest poi2 = new PointOfInterest(restaurantType, 40.7138, -74.0160, "Central Sushi");
-        PointOfInterest poi3 = new PointOfInterest(gasStationType, 40.7135, -74.0059, "Shell Gas Station");
+@RestController
+@RequestMapping("/api/accounts")
+public class UserController {
+    private final UserService userService;
 
-        poi1.display();
-        poi2.display();
-        poi3.display();
+    public UserController(UserServiceProxy userService) {
+        this.userService = userService;
+    }
+
+    @GetMapping("/{userId}")
+    public ResponseEntity<UserAccount> getUserAccount(@PathVariable Long userId) {
+        return ResponseEntity.ok(userService.getUserAccount(userId));
     }
 }
-
-Vantagens Após a Aplicação do Flyweight
-
-    Redução de memória: Como os tipos de POIs são compartilhados, não há necessidade de duplicar as informações type e icon para cada POI. Apenas as coordenadas e informações específicas são armazenadas em cada POI.
-    Eficiência: Para um grande número de POIs, o Flyweight permite um consumo de memória muito mais eficiente, tornando a aplicação mais escalável.
-    Manutenção Simplificada: Modificar um tipo de POI, como mudar o ícone de "Restaurante", requer apenas uma alteração na fábrica, pois todos os POIs do mesmo tipo compartilham a mesma instância.
-
-Assim, com o padrão Flyweight, conseguimos melhorar significativamente o desempenho e o uso de memória na aplicação, especialmente em sistemas com um volume elevado de objetos com dados compartilhados.

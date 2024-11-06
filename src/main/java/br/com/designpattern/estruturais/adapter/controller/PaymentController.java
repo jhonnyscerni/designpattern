@@ -1,7 +1,7 @@
-package br.com.designpattern.adapter.controller;
+package br.com.designpattern.estruturais.adapter.controller;
 
-import br.com.designpattern.adapter.controller.request.PaymentRequest;
-import br.com.designpattern.adapter.service.impl.PaymentProviderService;
+import br.com.designpattern.estruturais.adapter.controller.request.PaymentRequest;
+import br.com.designpattern.estruturais.adapter.service.impl.PaymentProviderService;
 import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
