@@ -1,0 +1,229 @@
+o exemplo tem cenário mais complexo e realista, incluindo múltiplos tipos de eventos e lógica mais robusta. Considere o desenvolvimento de um sistema para gerenciar as notificações em um marketplace. Aqui, vendedores e compradores precisam ser notificados de diferentes eventos, como:
+
+Vendedores: Notificados quando um pedido é criado ou quando o pagamento é aprovado.
+Compradores: Notificados quando o pedido é enviado ou entregue.
+Equipe interna: Notificada em eventos de falha, como problemas no pagamento.
+Cenário Complexo: Sistema de Notificações em um Marketplace
+Objetos observados (Subjects):
+Pedido: Responsável por eventos relacionados ao pedido (criação, atualização de status, falhas).
+Observadores:
+Vendedores: Recebem notificações específicas.
+Compradores: Recebem atualizações do status do pedido.
+Equipe interna: Observa apenas eventos de falhas.
+Arquitetura do Sistema
+Definir Eventos Personalizados: Cada evento carrega informações relevantes, como tipo, mensagem e dados associados.
+Centralizar Observação: Um NotificationManager gerencia os eventos e os observadores para diferentes tipos de eventos.
+Processamento Assíncrono: Utilizar eventos e notificações em um sistema assíncrono para melhorar escalabilidade.
+Implementação com Spring Boot
+Modelo do Evento (Event):
+java
+Copiar código
+public class Event {
+    private String type;
+    private String message;
+    private Object data;
+
+    public Event(String type, String message, Object data) {
+        this.type = type;
+        this.message = message;
+        this.data = data;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public Object getData() {
+        return data;
+    }
+}
+Interface Observer (Listener):
+java
+Copiar código
+public interface EventListener {
+    void update(Event event);
+}
+Gerenciador de Observação (NotificationManager):
+java
+Copiar código
+import org.springframework.stereotype.Component;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@Component
+public class NotificationManager {
+
+    private final Map<String, List<EventListener>> listeners = new HashMap<>();
+
+    public void subscribe(String eventType, EventListener listener) {
+        listeners.computeIfAbsent(eventType, k -> new ArrayList<>()).add(listener);
+    }
+
+    public void unsubscribe(String eventType, EventListener listener) {
+        List<EventListener> users = listeners.get(eventType);
+        if (users != null) {
+            users.remove(listener);
+        }
+    }
+
+    public void notify(Event event) {
+        List<EventListener> users = listeners.get(event.getType());
+        if (users != null) {
+            for (EventListener listener : users) {
+                listener.update(event);
+            }
+        }
+    }
+}
+Implementação de Observadores (Listeners):
+Vendedor:
+java
+Copiar código
+import org.springframework.stereotype.Component;
+
+@Component
+public class SellerNotificationListener implements EventListener {
+    @Override
+    public void update(Event event) {
+        System.out.println("Seller notified: " + event.getMessage() + " | Data: " + event.getData());
+    }
+}
+Comprador:
+java
+Copiar código
+import org.springframework.stereotype.Component;
+
+@Component
+public class BuyerNotificationListener implements EventListener {
+    @Override
+    public void update(Event event) {
+        System.out.println("Buyer notified: " + event.getMessage() + " | Data: " + event.getData());
+    }
+}
+Equipe Interna:
+java
+Copiar código
+import org.springframework.stereotype.Component;
+
+@Component
+public class InternalTeamNotificationListener implements EventListener {
+    @Override
+    public void update(Event event) {
+        System.out.println("Internal team notified: " + event.getMessage() + " | Data: " + event.getData());
+    }
+}
+Serviço de Pedido com Integração do NotificationManager:
+java
+Copiar código
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+@Service
+public class OrderService {
+
+    private final NotificationManager notificationManager;
+
+    @Autowired
+    public OrderService(NotificationManager notificationManager) {
+        this.notificationManager = notificationManager;
+    }
+
+    public void createOrder(String orderId) {
+        System.out.println("Order created with ID: " + orderId);
+        Event event = new Event("ORDER_CREATED", "New order created.", orderId);
+        notificationManager.notify(event);
+    }
+
+    public void approvePayment(String orderId) {
+        System.out.println("Payment approved for order ID: " + orderId);
+        Event event = new Event("PAYMENT_APPROVED", "Payment approved.", orderId);
+        notificationManager.notify(event);
+    }
+
+    public void shipOrder(String orderId) {
+        System.out.println("Order shipped with ID: " + orderId);
+        Event event = new Event("ORDER_SHIPPED", "Order shipped.", orderId);
+        notificationManager.notify(event);
+    }
+
+    public void paymentFailed(String orderId) {
+        System.out.println("Payment failed for order ID: " + orderId);
+        Event event = new Event("PAYMENT_FAILED", "Payment failed.", orderId);
+        notificationManager.notify(event);
+    }
+}
+Configuração e Testes no Controlador:
+java
+Copiar código
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+public class OrderController {
+
+    private final OrderService orderService;
+    private final NotificationManager notificationManager;
+    private final SellerNotificationListener sellerListener;
+    private final BuyerNotificationListener buyerListener;
+    private final InternalTeamNotificationListener internalTeamListener;
+
+    @Autowired
+    public OrderController(OrderService orderService, NotificationManager notificationManager,
+                           SellerNotificationListener sellerListener,
+                           BuyerNotificationListener buyerListener,
+                           InternalTeamNotificationListener internalTeamListener) {
+        this.orderService = orderService;
+        this.notificationManager = notificationManager;
+        this.sellerListener = sellerListener;
+        this.buyerListener = buyerListener;
+        this.internalTeamListener = internalTeamListener;
+
+        // Configurar assinaturas
+        notificationManager.subscribe("ORDER_CREATED", sellerListener);
+        notificationManager.subscribe("PAYMENT_APPROVED", sellerListener);
+        notificationManager.subscribe("ORDER_SHIPPED", buyerListener);
+        notificationManager.subscribe("PAYMENT_FAILED", internalTeamListener);
+    }
+
+    @GetMapping("/create-order")
+    public String createOrder(@RequestParam String orderId) {
+        orderService.createOrder(orderId);
+        return "Order created!";
+    }
+
+    @GetMapping("/approve-payment")
+    public String approvePayment(@RequestParam String orderId) {
+        orderService.approvePayment(orderId);
+        return "Payment approved!";
+    }
+
+    @GetMapping("/ship-order")
+    public String shipOrder(@RequestParam String orderId) {
+        orderService.shipOrder(orderId);
+        return "Order shipped!";
+    }
+
+    @GetMapping("/fail-payment")
+    public String failPayment(@RequestParam String orderId) {
+        orderService.paymentFailed(orderId);
+        return "Payment failed!";
+    }
+}
+Fluxo Real:
+Cadastro de Observadores no Sistema.
+Diferentes eventos são gerados (criação de pedido, pagamento aprovado, etc.).
+Cada evento dispara notificações específicas para os observadores relevantes.
+Vantagens:
+Modularidade: Observadores podem ser adicionados ou removidos sem impactar o restante do sistema.
+Flexibilidade: Suporte para múltiplos tipos de eventos.
+Escalabilidade: Permite que notificações sejam enviadas de forma eficiente, especialmente se integrado com um mecanismo de filas como Kafka ou RabbitMQ.
+Este exemplo é representativo de sistemas reais encontrados em marketplaces ou plataformas SaaS.

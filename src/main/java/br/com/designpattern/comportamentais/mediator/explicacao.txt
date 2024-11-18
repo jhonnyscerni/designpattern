@@ -1,0 +1,198 @@
+Segue um exemplo prático de como um engenheiro de software poderia implementar o padrão Mediator em um cenário real utilizando Spring Boot. Suponha que você trabalha em uma empresa que desenvolve um sistema de reserva de voos. Nesse sistema, você precisa lidar com a comunicação entre diversos componentes, como controle de disponibilidade, pagamento, e notificação de clientes.
+
+Contexto do Problema
+Sem o padrão Mediator, cada componente do sistema comunicaria diretamente uns com os outros, resultando em alto acoplamento. Por exemplo:
+
+O componente de disponibilidade de assentos deve notificar o componente de pagamento.
+O componente de pagamento precisa comunicar ao módulo de notificação sobre o status do pagamento.
+Isso cria dependências difíceis de gerenciar e testar.
+Utilizando o padrão Mediator, esses componentes só se comunicam através de um mediador central.
+
+
+Implementação Completa com o Mediator
+1. Definição da Interface Component
+Essa interface será implementada por todos os componentes que interagem com o Mediator. Ela padroniza a comunicação e permite que os componentes sejam desacoplados.
+
+java
+Copiar código
+public interface Component {
+    void setMediator(FlightBookingMediator mediator);
+}
+2. Definição da Interface do Mediator
+Define os métodos que o Mediator deve implementar para coordenar os componentes.
+
+java
+Copiar código
+public interface FlightBookingMediator {
+    void notify(Component sender, String event);
+}
+3. Implementação do Mediator
+A classe concreta do Mediator gerencia as interações entre os componentes.
+
+java
+Copiar código
+import org.springframework.stereotype.Component;
+
+@Component
+public class FlightBookingMediatorImpl implements FlightBookingMediator {
+
+    private AvailabilityService availabilityService;
+    private PaymentService paymentService;
+    private NotificationService notificationService;
+
+    public void registerComponents(AvailabilityService availabilityService,
+                                   PaymentService paymentService,
+                                   NotificationService notificationService) {
+        this.availabilityService = availabilityService;
+        this.paymentService = paymentService;
+        this.notificationService = notificationService;
+
+        this.availabilityService.setMediator(this);
+        this.paymentService.setMediator(this);
+        this.notificationService.setMediator(this);
+    }
+
+    @Override
+    public void notify(Component sender, String event) {
+        if (event.equals("seatReserved")) {
+            System.out.println("Mediator: Seat reserved, triggering payment...");
+            paymentService.processPayment();
+        } else if (event.equals("paymentProcessed")) {
+            System.out.println("Mediator: Payment processed, triggering notification...");
+            notificationService.sendNotification();
+        }
+    }
+}
+4. Implementação dos Componentes
+4.1. AvailabilityService
+Gerencia a disponibilidade de assentos e notifica o Mediator.
+
+java
+Copiar código
+import org.springframework.stereotype.Service;
+
+@Service
+public class AvailabilityService implements Component {
+
+    private FlightBookingMediator mediator;
+
+    @Override
+    public void setMediator(FlightBookingMediator mediator) {
+        this.mediator = mediator;
+    }
+
+    public void reserveSeat() {
+        System.out.println("AvailabilityService: Reserving seat...");
+        mediator.notify(this, "seatReserved");
+    }
+}
+4.2. PaymentService
+Processa o pagamento quando notificado pelo Mediator.
+
+java
+Copiar código
+import org.springframework.stereotype.Service;
+
+@Service
+public class PaymentService implements Component {
+
+    private FlightBookingMediator mediator;
+
+    @Override
+    public void setMediator(FlightBookingMediator mediator) {
+        this.mediator = mediator;
+    }
+
+    public void processPayment() {
+        System.out.println("PaymentService: Processing payment...");
+        mediator.notify(this, "paymentProcessed");
+    }
+}
+4.3. NotificationService
+Envia uma notificação ao cliente após o pagamento.
+
+java
+Copiar código
+import org.springframework.stereotype.Service;
+
+@Service
+public class NotificationService implements Component {
+
+    private FlightBookingMediator mediator;
+
+    @Override
+    public void setMediator(FlightBookingMediator mediator) {
+        this.mediator = mediator;
+    }
+
+    public void sendNotification() {
+        System.out.println("NotificationService: Sending notification to customer...");
+    }
+}
+5. Controlador para Simular o Fluxo
+O controlador inicia o fluxo chamando o método de reserva no AvailabilityService. O Mediator coordena o restante das ações.
+
+java
+Copiar código
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+public class BookingController {
+
+    private final FlightBookingMediatorImpl mediator;
+    private final AvailabilityService availabilityService;
+
+    public BookingController(FlightBookingMediatorImpl mediator, AvailabilityService availabilityService,
+                             PaymentService paymentService, NotificationService notificationService) {
+        this.mediator = mediator;
+        this.availabilityService = availabilityService;
+
+        // Registra os componentes no Mediator
+        mediator.registerComponents(availabilityService, paymentService, notificationService);
+    }
+
+    @GetMapping("/book-flight")
+    public String bookFlight() {
+        availabilityService.reserveSeat();
+        return "Flight booking initiated!";
+    }
+}
+Fluxo de Execução
+Quando o endpoint /book-flight é acessado:
+O BookingController chama o método reserveSeat() no AvailabilityService.
+O AvailabilityService notifica o FlightBookingMediator com o evento "seatReserved".
+O Mediator coordena e chama o método processPayment() no PaymentService.
+Após o pagamento, o PaymentService notifica o Mediator com o evento "paymentProcessed".
+O Mediator chama o método sendNotification() no NotificationService.
+Saída Esperada
+Ao acessar o endpoint /book-flight, a saída no console será:
+
+vbnet
+Copiar código
+AvailabilityService: Reserving seat...
+Mediator: Seat reserved, triggering payment...
+PaymentService: Processing payment...
+Mediator: Payment processed, triggering notification...
+NotificationService: Sending notification to customer...
+O navegador retornará:
+
+Copiar código
+Flight booking initiated!
+Vantagens da Solução
+Desacoplamento:
+
+Cada serviço é independente e comunica-se apenas através do Mediator.
+Escalabilidade:
+
+Novos componentes podem ser adicionados facilmente sem modificar os existentes.
+Manutenção:
+
+Alterações no fluxo de comunicação entre componentes são feitas apenas no Mediator.
+Aplicação Prática
+Essa abordagem pode ser usada em sistemas de:
+
+E-commerce: Coordenação entre estoque, pagamento e envio.
+Reservas: Hotéis, voos ou eventos.
+Financeiro: Coordenação de pagamentos, validações e notificações.
+A solução é modular e pode ser adaptada para cenários mais complexos.
