@@ -1,4 +1,4 @@
-Imagine que você está atuando como Engenheiro de Software em uma empresa que trabalha com uma plataforma de e-commerce. Nesse contexto, você recebe uma demanda para implementar um sistema de validação de pedidos complexos antes de serem processados, envolvendo diversas regras de negócio. Para esse tipo de problema, o padrão Chain of Responsibility pode ser uma ótima solução.
+ Imagine que você está atuando como Engenheiro de Software em uma empresa que trabalha com uma plataforma de e-commerce. Nesse contexto, você recebe uma demanda para implementar um sistema de validação de pedidos complexos antes de serem processados, envolvendo diversas regras de negócio. Para esse tipo de problema, o padrão Chain of Responsibility pode ser uma ótima solução.
 Cenário do Mercado de Trabalho
 
 Em um sistema de e-commerce, o processo de validação de pedidos envolve várias regras, como verificação de estoque, validação de método de pagamento, análise antifraude, e verificação de disponibilidade para entrega. Cada uma dessas validações deve ser realizada em sequência, e o pedido só deve prosseguir se todas as validações forem bem-sucedidas.
@@ -133,4 +133,4 @@ Benefícios
 
 Considerações
 
-Esse padrão é ideal para cenários onde o fluxo de validações pode variar ou quando existe a possibilidade de adicionar ou modificar as etapas de validação sem comprometer o funcionamento do sistema. Essa abordagem baseada no Chain of Responsibility permite um design mais resiliente e pronto para mudanças, algo essencial para demandas e regras de negócio que tendem a evoluir com o tempo em empresas de e-commerce e outras áreas dinâmicas.
+Esse padrão é ideal para cenários onde o fluxo de validações pode variar ou quando existe a possibilidade de adicionar ou modificar as etapas de validação sem comprometer o funcionamento do sistema. Essa abordagem baseada no Chain of Responsibility permite um design mais resiliente e pronto para mudanças, algo essencial para demandas e regras de negócio que tendem a evoluir com o tempo em empresas de e-commerce e outras áreas dinâmicas

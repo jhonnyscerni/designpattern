@@ -1,0 +1,177 @@
+Um exemplo prático do uso do padrão State é a implementação de um sistema de gestão de pagamentos que muda de comportamento dependendo do estado do pagamento. No Spring Boot, isso pode ser aplicado ao gerenciar as diferentes etapas de processamento de uma transação: Pendente, Processando, Concluído e Falha.
+
+Aqui está um exemplo detalhado:
+
+Cenário
+Um engenheiro de software é responsável por implementar a lógica de processamento de pagamentos em um sistema bancário. O estado de um pagamento pode mudar ao longo do tempo, e as operações associadas ao pagamento devem variar conforme o estado.
+
+Modelando o Padrão State
+O padrão State permite representar as transições entre os estados do pagamento.
+
+Definição dos Estados (Interface e Classes Concretas): Criamos uma interface PaymentState que define o comportamento esperado, e implementamos classes concretas para cada estado.
+java
+Copiar código
+// Interface State
+public interface PaymentState {
+    void process(PaymentContext context);
+    void cancel(PaymentContext context);
+    void complete(PaymentContext context);
+}
+
+// Estado Pendente
+public class PendingState implements PaymentState {
+    @Override
+    public void process(PaymentContext context) {
+        System.out.println("Pagamento está sendo processado...");
+        context.setState(new ProcessingState());
+    }
+
+    @Override
+    public void cancel(PaymentContext context) {
+        System.out.println("Pagamento pendente foi cancelado.");
+        context.setState(new CanceledState());
+    }
+
+    @Override
+    public void complete(PaymentContext context) {
+        System.out.println("Não é possível concluir um pagamento pendente.");
+    }
+}
+
+// Estado Processando
+public class ProcessingState implements PaymentState {
+    @Override
+    public void process(PaymentContext context) {
+        System.out.println("Pagamento já está sendo processado.");
+    }
+
+    @Override
+    public void cancel(PaymentContext context) {
+        System.out.println("Cancelando pagamento em processamento...");
+        context.setState(new CanceledState());
+    }
+
+    @Override
+    public void complete(PaymentContext context) {
+        System.out.println("Pagamento processado com sucesso!");
+        context.setState(new CompletedState());
+    }
+}
+
+// Estado Concluído
+public class CompletedState implements PaymentState {
+    @Override
+    public void process(PaymentContext context) {
+        System.out.println("Pagamento já foi concluído.");
+    }
+
+    @Override
+    public void cancel(PaymentContext context) {
+        System.out.println("Pagamento concluído não pode ser cancelado.");
+    }
+
+    @Override
+    public void complete(PaymentContext context) {
+        System.out.println("Pagamento já está concluído.");
+    }
+}
+
+// Estado Cancelado
+public class CanceledState implements PaymentState {
+    @Override
+    public void process(PaymentContext context) {
+        System.out.println("Não é possível processar um pagamento cancelado.");
+    }
+
+    @Override
+    public void cancel(PaymentContext context) {
+        System.out.println("Pagamento já foi cancelado.");
+    }
+
+    @Override
+    public void complete(PaymentContext context) {
+        System.out.println("Não é possível concluir um pagamento cancelado.");
+    }
+}
+Contexto do Pagamento: A classe PaymentContext mantém uma referência ao estado atual e delega operações ao estado correspondente.
+java
+Copiar código
+public class PaymentContext {
+    private PaymentState state;
+
+    public PaymentContext() {
+        this.state = new PendingState(); // Estado inicial
+    }
+
+    public void setState(PaymentState state) {
+        this.state = state;
+    }
+
+    public void process() {
+        state.process(this);
+    }
+
+    public void cancel() {
+        state.cancel(this);
+    }
+
+    public void complete() {
+        state.complete(this);
+    }
+}
+Controlador REST no Spring Boot: Para expor a lógica de estados através de uma API REST.
+java
+Copiar código
+@RestController
+@RequestMapping("/payments")
+public class PaymentController {
+
+    private Map<String, PaymentContext> payments = new HashMap<>();
+
+    @PostMapping("/{paymentId}/create")
+    public ResponseEntity<String> createPayment(@PathVariable String paymentId) {
+        payments.put(paymentId, new PaymentContext());
+        return ResponseEntity.ok("Pagamento criado com ID: " + paymentId);
+    }
+
+    @PostMapping("/{paymentId}/process")
+    public ResponseEntity<String> processPayment(@PathVariable String paymentId) {
+        PaymentContext context = payments.get(paymentId);
+        if (context != null) {
+            context.process();
+            return ResponseEntity.ok("Pagamento processado.");
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Pagamento não encontrado.");
+    }
+
+    @PostMapping("/{paymentId}/cancel")
+    public ResponseEntity<String> cancelPayment(@PathVariable String paymentId) {
+        PaymentContext context = payments.get(paymentId);
+        if (context != null) {
+            context.cancel();
+            return ResponseEntity.ok("Pagamento cancelado.");
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Pagamento não encontrado.");
+    }
+
+    @PostMapping("/{paymentId}/complete")
+    public ResponseEntity<String> completePayment(@PathVariable String paymentId) {
+        PaymentContext context = payments.get(paymentId);
+        if (context != null) {
+            context.complete();
+            return ResponseEntity.ok("Pagamento concluído.");
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Pagamento não encontrado.");
+    }
+}
+Fluxo de Execução:
+Criar um pagamento via /payments/{paymentId}/create.
+Processar o pagamento via /payments/{paymentId}/process.
+Cancelar ou concluir o pagamento via /payments/{paymentId}/cancel ou /payments/{paymentId}/complete.
+
+
+Benefícios no Mundo Real
+Flexibilidade: Adicionar novos estados no futuro (como Em revisão) é simples.
+Responsabilidade clara: Cada classe de estado é responsável apenas por suas operações.
+Reuso: Estados e comportamentos podem ser reutilizados em outros fluxos.
+Essa abordagem é comum em sistemas financeiros para gerenciar fluxos complexos de pagamentos e outros processos sensíveis a estados, garantindo que os comportamentos sejam controlados e previsíveis.

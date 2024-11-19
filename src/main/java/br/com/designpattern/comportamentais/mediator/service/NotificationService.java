@@ -1,7 +1,6 @@
 package br.com.designpattern.comportamentais.mediator.service;
 
-import br.com.designpattern.comportamentais.mediator.Component;
-import br.com.designpattern.comportamentais.mediator.FlightBookingMediator;
+import br.com.designpattern.comportamentais.mediator.mediator.FlightBookingMediator;
 import org.springframework.stereotype.Service;
 
 @Service

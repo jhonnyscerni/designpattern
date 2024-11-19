@@ -1,0 +1,163 @@
+Vamos imaginar um cenário no setor bancário semelhante ao PicPay, onde você precisa implementar o padrão Memento para gerenciar o estado de transações financeiras antes de finalizá-las. Esse padrão pode ser útil, por exemplo, ao permitir que um usuário desfaça alterações feitas em uma transferência antes de concluí-la, mantendo a consistência e a segurança do sistema.
+
+Aqui está um exemplo em Spring Boot para ilustrar como implementar isso:
+
+Cenário
+Imagine que você está desenvolvendo um sistema de pagamento onde um usuário pode criar uma transação, ajustar valores e destinatários, mas precisa da opção de desfazer ou restaurar o estado anterior antes de confirmar a transação.
+
+Código de Exemplo
+1. Classe Memento para salvar o estado
+java
+Copiar código
+public class TransactionMemento {
+    private final String sender;
+    private final String receiver;
+    private final Double amount;
+
+    public TransactionMemento(String sender, String receiver, Double amount) {
+        this.sender = sender;
+        this.receiver = receiver;
+        this.amount = amount;
+    }
+
+    public String getSender() {
+        return sender;
+    }
+
+    public String getReceiver() {
+        return receiver;
+    }
+
+    public Double getAmount() {
+        return amount;
+    }
+}
+2. Classe Originator para manipular o estado
+java
+Copiar código
+public class Transaction {
+    private String sender;
+    private String receiver;
+    private Double amount;
+
+    public Transaction(String sender, String receiver, Double amount) {
+        this.sender = sender;
+        this.receiver = receiver;
+        this.amount = amount;
+    }
+
+    public void setDetails(String sender, String receiver, Double amount) {
+        this.sender = sender;
+        this.receiver = receiver;
+        this.amount = amount;
+    }
+
+    public TransactionMemento save() {
+        return new TransactionMemento(sender, receiver, amount);
+    }
+
+    public void restore(TransactionMemento memento) {
+        this.sender = memento.getSender();
+        this.receiver = memento.getReceiver();
+        this.amount = memento.getAmount();
+    }
+
+    @Override
+    public String toString() {
+        return "Transaction{" +
+                "sender='" + sender + '\'' +
+                ", receiver='" + receiver + '\'' +
+                ", amount=" + amount +
+                '}';
+    }
+}
+3. Classe Caretaker para gerenciar estados
+java
+Copiar código
+import java.util.Stack;
+
+public class TransactionHistory {
+    private final Stack<TransactionMemento> history = new Stack<>();
+
+    public void save(Transaction transaction) {
+        history.push(transaction.save());
+    }
+
+    public void undo(Transaction transaction) {
+        if (!history.isEmpty()) {
+            transaction.restore(history.pop());
+        } else {
+            System.out.println("No previous state to restore.");
+        }
+    }
+}
+4. Controlador REST no Spring Boot
+java
+Copiar código
+@RestController
+@RequestMapping("/api/transactions")
+public class TransactionController {
+
+    private final Transaction transaction = new Transaction("UserA", "UserB", 100.0);
+    private final TransactionHistory transactionHistory = new TransactionHistory();
+
+    @PostMapping("/update")
+    public String updateTransaction(@RequestParam String sender,
+                                     @RequestParam String receiver,
+                                     @RequestParam Double amount) {
+        transactionHistory.save(transaction); // Salva o estado atual
+        transaction.setDetails(sender, receiver, amount);
+        return "Transaction updated: " + transaction.toString();
+    }
+
+    @PostMapping("/undo")
+    public String undoTransaction() {
+        transactionHistory.undo(transaction);
+        return "Transaction reverted: " + transaction.toString();
+    }
+
+    @GetMapping
+    public String getTransaction() {
+        return "Current transaction: " + transaction.toString();
+    }
+}
+Funcionamento
+O usuário pode enviar uma solicitação para atualizar os detalhes da transação via /api/transactions/update.
+Antes de atualizar, o estado atual é salvo no TransactionHistory usando o método save().
+Se o usuário quiser desfazer a última alteração, ele pode chamar /api/transactions/undo, e o estado anterior será restaurado.
+Exemplo de Requisições
+Atualizar Transação
+
+bash
+Copiar código
+curl -X POST "http://localhost:8080/api/transactions/update?sender=UserC&receiver=UserD&amount=200"
+Resposta:
+
+arduino
+Copiar código
+Transaction updated: Transaction{sender='UserC', receiver='UserD', amount=200.0}
+Desfazer Atualização
+
+bash
+Copiar código
+curl -X POST "http://localhost:8080/api/transactions/undo"
+Resposta:
+
+arduino
+Copiar código
+Transaction reverted: Transaction{sender='UserA', receiver='UserB', amount=100.0}
+Obter Transação Atual
+
+bash
+Copiar código
+curl -X GET "http://localhost:8080/api/transactions"
+Resposta:
+
+sql
+Copiar código
+Current transaction: Transaction{sender='UserA', receiver='UserB', amount=100.0}
+Benefícios
+Separação de Responsabilidades: O padrão Memento separa a lógica de salvamento/restauração de estados da lógica do negócio.
+Segurança: Os detalhes internos da transação ficam encapsulados e não expostos.
+Facilidade de Reversão: O usuário pode desfazer alterações sem complicações.
+Este é um exemplo prático e relevante para um cenário no setor bancário inspirado no uso de padrões comportamentais como o Memento!

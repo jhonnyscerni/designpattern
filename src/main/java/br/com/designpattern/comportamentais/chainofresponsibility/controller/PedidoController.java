@@ -19,7 +19,7 @@ public class PedidoController {
         this.pedidoService = pedidoService;
     }
 
-    @PostMapping("/processar-pedido")
+    @PostMapping("/chainofresponsibility/processar-pedido")
     public ResponseEntity<String> processarPedido(@RequestBody Pedido pedido) {
         boolean pedidoValido = pedidoService.processarPedido(pedido);
         if (!pedidoValido) {

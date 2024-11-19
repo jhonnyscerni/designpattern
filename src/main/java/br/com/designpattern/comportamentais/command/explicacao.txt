@@ -1,0 +1,158 @@
+O padrão de projeto Command é especialmente útil em aplicações complexas, como sistemas bancários ou financeiros, onde comandos precisam ser parametrizados, armazenados e executados em momentos específicos, ou mesmo suportar operações como retry e undo. A seguir, vou apresentar um exemplo prático em um cenário semelhante ao de um sistema bancário, como o PicPay, utilizando Spring Boot.
+
+Cenário do Problema
+Em um sistema bancário, imagine que você precisa lidar com transferências financeiras. Cada transferência pode:
+
+Ser agendada.
+Requerer uma operação de retry em caso de falha.
+Ser parametrizada por diferentes métodos de execução (ex.: saldo, crédito, limites especiais).
+Ser armazenada em um log para auditoria.
+Para resolver isso, implementaremos o padrão Command no contexto de uma API de transferência financeira.
+
+Estrutura do Padrão Command
+Command Interface: Define a estrutura de comandos executáveis.
+Concrete Commands: Implementações específicas de comandos.
+Invoker: Classe que dispara comandos (ex.: serviço que executa transferências).
+Receiver: Classe que realiza as operações concretas (ex.: serviço bancário).
+Client: Configura os comandos e inicia o processo.
+Exemplo com Spring Boot
+1. Dependências
+Certifique-se de adicionar as dependências básicas no pom.xml:
+
+xml
+Copiar código
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter</artifactId>
+</dependency>
+2. Interface Command
+A interface TransferCommand define a estrutura de um comando de transferência.
+
+java
+Copiar código
+public interface TransferCommand {
+    void execute();
+}
+3. Concrete Commands
+Os comandos concretos implementam a lógica de transferência (ex.: saldo, crédito especial).
+
+java
+Copiar código
+@Service
+public class BalanceTransferCommand implements TransferCommand {
+    private final TransferService transferService;
+    private final TransferRequest request;
+
+    public BalanceTransferCommand(TransferService transferService, TransferRequest request) {
+        this.transferService = transferService;
+        this.request = request;
+    }
+
+    @Override
+    public void execute() {
+        transferService.transferUsingBalance(request);
+    }
+}
+
+@Service
+public class CreditTransferCommand implements TransferCommand {
+    private final TransferService transferService;
+    private final TransferRequest request;
+
+    public CreditTransferCommand(TransferService transferService, TransferRequest request) {
+        this.transferService = transferService;
+        this.request = request;
+    }
+
+    @Override
+    public void execute() {
+        transferService.transferUsingCredit(request);
+    }
+}
+4. Receiver (Serviço de Transferência)
+A lógica central de transferência é implementada no Receiver.
+
+java
+Copiar código
+@Service
+public class TransferService {
+    public void transferUsingBalance(TransferRequest request) {
+        System.out.println("Transferência via saldo: " + request);
+        // Lógica de transferência via saldo
+    }
+
+    public void transferUsingCredit(TransferRequest request) {
+        System.out.println("Transferência via crédito: " + request);
+        // Lógica de transferência via crédito
+    }
+}
+5. Invoker (Executor de Comandos)
+O invoker é responsável por receber e executar os comandos.
+
+java
+Copiar código
+@Service
+public class TransferExecutor {
+    public void executeCommand(TransferCommand command) {
+        command.execute();
+    }
+}
+6. Client (Controlador REST)
+Aqui configuramos os comandos e iniciamos o processo.
+
+java
+Copiar código
+@RestController
+@RequestMapping("/transfers")
+public class TransferController {
+
+    private final TransferService transferService;
+    private final TransferExecutor transferExecutor;
+
+    public TransferController(TransferService transferService, TransferExecutor transferExecutor) {
+        this.transferService = transferService;
+        this.transferExecutor = transferExecutor;
+    }
+
+    @PostMapping
+    public ResponseEntity<String> executeTransfer(@RequestBody TransferRequest request) {
+        TransferCommand command;
+
+        // Seleciona o tipo de comando baseado na entrada
+        if ("BALANCE".equalsIgnoreCase(request.getType())) {
+            command = new BalanceTransferCommand(transferService, request);
+        } else if ("CREDIT".equalsIgnoreCase(request.getType())) {
+            command = new CreditTransferCommand(transferService, request);
+        } else {
+            return ResponseEntity.badRequest().body("Tipo de transferência inválido");
+        }
+
+        // Executa o comando
+        transferExecutor.executeCommand(command);
+
+        return ResponseEntity.ok("Transferência realizada com sucesso!");
+    }
+}
+7. Modelo da Requisição
+Um modelo simples para receber os dados da transferência.
+
+java
+Copiar código
+public class TransferRequest {
+    private String type; // BALANCE ou CREDIT
+    private String accountFrom;
+    private String accountTo;
+    private Double amount;
+
+    // Getters e Setters
+}
+Fluxo de Funcionamento
+O cliente (frontend) envia uma solicitação de transferência para o endpoint /transfers.
+O controlador seleciona o comando concreto com base no tipo de transferência (BALANCE ou CREDIT).
+O comando é passado para o TransferExecutor, que o executa.
+O TransferService realiza a operação específica.
+Benefícios do Padrão Command Aqui
+Extensibilidade: Novos tipos de transferência (ex.: Pix) podem ser adicionados sem modificar o código existente.
+Log/Auditoria: Comandos podem ser armazenados e reexecutados, garantindo conformidade e resiliência.
+Flexibilidade: A lógica de execução fica desacoplada da lógica de controle.
+Esse exemplo reflete um cenário realista em sistemas bancários ou financeiros. Você pode expandir para incluir funcionalidades como agendamento, retry, ou rollback, dependendo das necessidades do sistema.
