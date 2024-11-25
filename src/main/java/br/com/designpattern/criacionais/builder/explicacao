@@ -1,0 +1,129 @@
+O padrão Builder é particularmente útil em cenários onde é necessário criar objetos complexos, especialmente aqueles com muitos atributos ou configurações opcionais. No contexto do mercado de trabalho, um exemplo no setor bancário usando Spring Boot pode ser encontrado em sistemas de geração de contratos, como contratos de empréstimos personalizados.
+
+Exemplo Real:
+Imagine que você está desenvolvendo um sistema bancário em Spring Boot que gera contratos de empréstimo. Um contrato pode ter diversas configurações, dependendo do tipo de cliente, valores do empréstimo, taxas de juros e cláusulas opcionais. O uso do padrão Builder permite que você configure esses contratos de forma flexível e mantenha o código limpo e legível.
+
+Contexto do Problema:
+O banco precisa de uma aplicação para gerar contratos de empréstimos. O contrato possui várias configurações opcionais e obrigatórias, como:
+
+Valor do empréstimo.
+Taxa de juros.
+Período de pagamento.
+Tipo de cliente (PF ou PJ).
+Cláusulas específicas, dependendo da análise de crédito.
+A complexidade surge porque nem todos os contratos possuem as mesmas configurações. Contratos para clientes PJ podem ter garantias adicionais, enquanto para PF podem incluir seguros opcionais.
+
+Implementação com o Builder:
+Usando o padrão Builder, podemos criar um construtor para o ContratoDeEmprestimo.
+
+1. Classe ContratoDeEmprestimo:
+java
+Copiar código
+public class ContratoDeEmprestimo {
+    private final String cliente;
+    private final double valorEmprestimo;
+    private final double taxaJuros;
+    private final int prazo;
+    private final String tipoCliente;
+    private final boolean seguro;
+    private final String garantia;
+
+    // Construtor privado
+    private ContratoDeEmprestimo(Builder builder) {
+        this.cliente = builder.cliente;
+        this.valorEmprestimo = builder.valorEmprestimo;
+        this.taxaJuros = builder.taxaJuros;
+        this.prazo = builder.prazo;
+        this.tipoCliente = builder.tipoCliente;
+        this.seguro = builder.seguro;
+        this.garantia = builder.garantia;
+    }
+
+    // Classe Builder interna
+    public static class Builder {
+        private String cliente;
+        private double valorEmprestimo;
+        private double taxaJuros;
+        private int prazo;
+        private String tipoCliente;
+        private boolean seguro = false; // Default
+        private String garantia = null; // Default
+
+        public Builder(String cliente, double valorEmprestimo) {
+            this.cliente = cliente;
+            this.valorEmprestimo = valorEmprestimo;
+        }
+
+        public Builder taxaJuros(double taxaJuros) {
+            this.taxaJuros = taxaJuros;
+            return this;
+        }
+
+        public Builder prazo(int prazo) {
+            this.prazo = prazo;
+            return this;
+        }
+
+        public Builder tipoCliente(String tipoCliente) {
+            this.tipoCliente = tipoCliente;
+            return this;
+        }
+
+        public Builder seguro(boolean seguro) {
+            this.seguro = seguro;
+            return this;
+        }
+
+        public Builder garantia(String garantia) {
+            this.garantia = garantia;
+            return this;
+        }
+
+        public ContratoDeEmprestimo build() {
+            return new ContratoDeEmprestimo(this);
+        }
+    }
+
+    @Override
+    public String toString() {
+        return "ContratoDeEmprestimo{" +
+                "cliente='" + cliente + '\'' +
+                ", valorEmprestimo=" + valorEmprestimo +
+                ", taxaJuros=" + taxaJuros +
+                ", prazo=" + prazo +
+                ", tipoCliente='" + tipoCliente + '\'' +
+                ", seguro=" + seguro +
+                ", garantia='" + garantia + '\'' +
+                '}';
+    }
+}
+2. Exemplo de Uso:
+java
+Copiar código
+public class GeradorDeContratos {
+    public static void main(String[] args) {
+        // Contrato para Pessoa Física
+        ContratoDeEmprestimo contratoPF = new ContratoDeEmprestimo.Builder("João Silva", 50000)
+                .taxaJuros(1.5)
+                .prazo(24)
+                .tipoCliente("PF")
+                .seguro(true)
+                .build();
+
+        // Contrato para Pessoa Jurídica
+        ContratoDeEmprestimo contratoPJ = new ContratoDeEmprestimo.Builder("Empresa XYZ", 200000)
+                .taxaJuros(1.2)
+                .prazo(36)
+                .tipoCliente("PJ")
+                .garantia("Imóvel Comercial")
+                .build();
+
+        // Imprime os contratos
+        System.out.println(contratoPF);
+        System.out.println(contratoPJ);
+    }
+}
+Vantagens no Cenário Bancário:
+Flexibilidade: Permite a criação de contratos altamente configuráveis sem exigir múltiplos construtores ou métodos específicos.
+Manutenção Simples: Alterações nas regras de negócio podem ser implementadas diretamente no Builder sem impacto no código existente.
+Legibilidade: O código que utiliza o Builder é claro e fácil de entender.

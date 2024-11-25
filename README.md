@@ -37,6 +37,8 @@ Cada padrão de design está implementado em um pacote separado. Para entender a
 - Gradle 6.8+
 
 ## Executando o Projeto
+crie o Readme.mb dessa conteudo aqui  e gere o arquivo Readme.mb para download
+
 
 1. Clone o repositório:
    ```sh
