@@ -3,7 +3,7 @@ package br.com.designpattern.comportamentais.mediator.service;
 import br.com.designpattern.comportamentais.mediator.mediator.FlightBookingMediator;
 import org.springframework.stereotype.Service;
 
-@Service
+@Service("mediatorPaymentService")
 public class PaymentService implements Component {
 
     private FlightBookingMediator mediator;

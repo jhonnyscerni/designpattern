@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-@Service
+@Service("templatemethodTransactionService")
 public class TransactionService {
 
     private final Map<String, TransactionProcessor> processors;

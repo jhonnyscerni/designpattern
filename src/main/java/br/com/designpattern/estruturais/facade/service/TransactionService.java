@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-@Service
+@Service("facadeTransactionService")
 public class TransactionService {
 
     public List<Transaction> getRecentTransactions(String userId) {

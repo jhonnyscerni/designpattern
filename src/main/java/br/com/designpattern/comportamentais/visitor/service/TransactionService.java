@@ -4,7 +4,7 @@ import br.com.designpattern.comportamentais.visitor.model.VisitableTransaction;
 import br.com.designpattern.comportamentais.visitor.visitor.TransactionProcessorVisitor;
 import org.springframework.stereotype.Service;
 
-@Service
+@Service("visitorTransactionService")
 public class TransactionService {
 
     private TransactionProcessorVisitor processor = new TransactionProcessorVisitor();

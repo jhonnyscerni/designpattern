@@ -1,5 +1,8 @@
 package br.com.designpattern.comportamentais.command.model;
 
+import org.springframework.stereotype.Component;
+
+@Component
 public class TransferRequest {
     private String type; // Tipo de transferência: BALANCE ou CREDIT
     private String accountFrom; // Conta de origem

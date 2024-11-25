@@ -5,7 +5,7 @@ import br.com.designpattern.comportamentais.visitor.service.TransactionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-@RestController
+@RestController("visitorTransactionController")
 @RequestMapping("/visitor/transactions")
 public class TransactionController {
 

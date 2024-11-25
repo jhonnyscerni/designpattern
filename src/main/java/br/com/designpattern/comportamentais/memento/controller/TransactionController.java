@@ -4,7 +4,7 @@ import br.com.designpattern.comportamentais.memento.model.Transaction;
 import br.com.designpattern.comportamentais.memento.service.TransactionHistory;
 import org.springframework.web.bind.annotation.*;
 
-@RestController
+@RestController("mementoTransactionController")
 @RequestMapping("/memento/api/transactions")
 public class TransactionController {
 

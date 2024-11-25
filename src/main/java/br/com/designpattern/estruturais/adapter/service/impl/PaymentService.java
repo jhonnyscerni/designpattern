@@ -8,7 +8,7 @@ import br.com.designpattern.estruturais.adapter.model.external.StripeChargeInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-@Service
+@Service("adapterPaymentService")
 public class PaymentService {
 
     private final PayPalAdapter payPalAdapter;
